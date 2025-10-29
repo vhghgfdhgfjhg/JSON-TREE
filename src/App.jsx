@@ -10,25 +10,12 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 
-/**
- * APIWIZ – JSON Tree Visualizer
- * Tech: React + React Flow + Tailwind (utility classes)
- * Features:
- * - JSON input + validation
- * - Tree visualization using React Flow (objects, arrays, primitives)
- * - Search by JSONPath style (e.g., $.user.address.city, items[0].name)
- * - Highlight + pan/zoom to matched node
- * - Zoom controls, pan/drag, hover info
- * - Dark/Light theme, sample JSON, clear/reset, click-to-copy path
- */
 
-// --- Simple JSONPath parser supporting patterns like:
-// $.a.b.c, a.b[0].c, items[2], $.list[1].name
 function parseJsonPath(input) {
   if (!input) return [];
   let s = input.trim();
-  if (s.startsWith("$")) s = s.slice(1); // remove leading $
-  if (s.startsWith(".")) s = s.slice(1); // optional dot after $
+  if (s.startsWith("$")) s = s.slice(1); 
+  if (s.startsWith(".")) s = s.slice(1); 
 
   const tokens = [];
   let buf = "";
@@ -49,11 +36,10 @@ function parseJsonPath(input) {
         j++;
       }
       if (j >= s.length) {
-        // unmatched bracket -> invalid
         return null;
       }
       const idx = acc.trim();
-      if (!/^\d+$/.test(idx)) return null; // only numeric indices supported
+      if (!/^\d+$/.test(idx)) return null; 
       tokens.push(`[${idx}]`);
       i = j + 1;
       if (s[i] === ".") i++; // eat trailing dot if any
@@ -66,7 +52,7 @@ function parseJsonPath(input) {
   return tokens.filter(Boolean);
 }
 
-// Generate a canonical path for a child key/index under a parent path
+
 function makeChildPath(parentPath, key) {
   if (key.startsWith("[")) {
     // array index
@@ -76,28 +62,26 @@ function makeChildPath(parentPath, key) {
   return parentPath ? `${parentPath}.${key}` : key;
 }
 
-// Node styling by type
+
 const COLORS = {
   object: {
-    bg: "#e0e7ff", // indigo-100
-    border: "#6366f1", // indigo-500
+    bg: "#e0e7ff",
+    border: "#6366f1", 
   },
   array: {
-    bg: "#dcfce7", // green-100
-    border: "#22c55e", // green-500
+    bg: "#dcfce7", 
+    border: "#22c55e",
   },
   primitive: {
-    bg: "#ffedd5", // orange-100
-    border: "#f97316", // orange-500
+    bg: "#ffedd5",
+    border: "#f97316", 
   },
   highlight: {
-    border: "#f59e0b", // amber-500
+    border: "#f59e0b", 
     shadow: "0 0 0 3px rgba(245, 158, 11, 0.35)",
   },
 };
 
-// Compute a simple top-down tree layout
-// Returns { nodes, edges }
 function buildFlowFromJSON(json) {
   const nodes = [];
   const edges = [];
@@ -163,7 +147,7 @@ function buildFlowFromJSON(json) {
 
   traverse(json, "root", 0, null, "root");
 
-  // Center the tree roughly by shifting x positions to be centered per depth
+  
   const depthCounts = Object.keys(leafOrderAtDepth).map((d) => [Number(d), leafOrderAtDepth[d]]);
   const maxCols = depthCounts.length ? Math.max(...depthCounts.map(([, c]) => c)) : 1;
   const centerX = ((maxCols - 1) * X_STEP) / 2;
@@ -174,7 +158,6 @@ function buildFlowFromJSON(json) {
   return { nodes, edges };
 }
 
-// Tailwind utility: basic chip
 const Chip = ({ children }) => (
   <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium opacity-80">
     {children}
@@ -223,9 +206,7 @@ export default function App() {
   const [highlightId, setHighlightId] = useState("");
   const [toast, setToast] = useState("");
 
-  const rf = useReactFlow(); // note: only valid once inside ReactFlow context — we guard usage
-
-  // Rebuild when json changes
+  const rf = useReactFlow(); 
   useEffect(() => {
     setNodes(builtNodes);
     setEdges(builtEdges);
@@ -246,7 +227,7 @@ export default function App() {
   }, [raw]);
 
   const clearAll = useCallback(() => {
-    // Reset to an empty JSON object and clear search/highlight
+    
     setRaw("{}");
     setJson({});
     setQuery("");
@@ -266,8 +247,7 @@ export default function App() {
   const findNodeByPath = useCallback(
     (pathStr) => {
       const tokens = parseJsonPath(pathStr);
-      if (!tokens) return null; // invalid
-      // Build canonical id from tokens relative to "root"
+      if (!tokens) return null; 
       let path = "root";
       for (const t of tokens) {
         path = makeChildPath(path, t);
@@ -282,7 +262,6 @@ export default function App() {
     setMatchMsg("");
     const q = query.trim();
     if (!q) return;
-    // allow shorthand like "user.address.city" -> prepend $
     const normalized = q.startsWith("$") || q.startsWith("root") || q.includes("[") || q.includes(".") ? q : `$.${q}`;
     const node = findNodeByPath(normalized);
     if (!node) {
@@ -292,14 +271,13 @@ export default function App() {
     }
     setHighlightId(node.id);
     setMatchMsg("Match found");
-    // Pan & center — guard rf
+    
     try {
       if (rf && typeof rf.fitView === "function") {
         rf.fitView({ nodes: [node], padding: 0.4, duration: 600 });
       }
     } catch (err) {
-      // if useReactFlow isn't available outside provider, ignore
-      // alternative: no op
+      
       console.log(err)
     }
   }, [query, findNodeByPath, rf]);
@@ -312,7 +290,7 @@ export default function App() {
         setToast("JSON path copied to clipboard");
         setTimeout(() => setToast(""), 1500);
       } else {
-        // fallback: notify user to copy manually
+       
         setToast("Copying not supported in this browser");
         setTimeout(() => setToast(""), 1500);
       }
@@ -322,7 +300,6 @@ export default function App() {
     }
   }, []);
 
-  // Decorate node styles when highlighted
   const decoratedNodes = useMemo(() => {
     return nodes.map((n) => {
       if (n.id === highlightId) {
